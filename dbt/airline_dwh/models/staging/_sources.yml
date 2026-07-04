@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw landing zone populated by the Python ingestion job (Talend-style extract + load)."
+    schema: raw
+    tables:
+      - name: flights
+        description: "Operational flight feed, one row per flight event (contains raw defects)."
+      - name: airports
+        description: "Airport master data (IATA codes, coordinates)."
+      - name: carriers
+        description: "Airline carrier master data."
+      - name: weather
+        description: "Daily weather per airport."

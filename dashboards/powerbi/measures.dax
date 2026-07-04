@@ -1,0 +1,56 @@
+// ------------------------------------------------------------------
+// Power BI / DAX measures for the airline star schema.
+// Paste into Power BI Desktop (New Measure) against fact_flights.
+// ------------------------------------------------------------------
+
+Total Flights = COUNTROWS ( fact_flights )
+
+Cancelled Flights =
+CALCULATE ( [Total Flights], fact_flights[is_cancelled] = TRUE () )
+
+Completed Flights = [Total Flights] - [Cancelled Flights]
+
+Cancellation % =
+DIVIDE ( [Cancelled Flights], [Total Flights] )
+
+Completion Factor % =
+DIVIDE ( [Completed Flights], [Total Flights] )
+
+On-Time Flights =
+CALCULATE ( [Total Flights], fact_flights[is_on_time] = TRUE () )
+
+On-Time % =
+DIVIDE ( [On-Time Flights], [Completed Flights] )
+
+Delayed Flights =
+CALCULATE ( [Total Flights], fact_flights[is_delayed] = TRUE () )
+
+Avg Arrival Delay =
+CALCULATE (
+    AVERAGE ( fact_flights[arr_delay_min] ),
+    fact_flights[is_cancelled] = FALSE ()
+)
+
+Avg Departure Delay =
+CALCULATE (
+    AVERAGE ( fact_flights[dep_delay_min] ),
+    fact_flights[is_cancelled] = FALSE ()
+)
+
+// --- delay-cause breakdown ---------------------------------------
+Carrier Delay Minutes       = SUM ( fact_flights[carrier_delay_min] )
+Weather Delay Minutes       = SUM ( fact_flights[weather_delay_min] )
+NAS Delay Minutes           = SUM ( fact_flights[nas_delay_min] )
+Security Delay Minutes      = SUM ( fact_flights[security_delay_min] )
+Late Aircraft Delay Minutes = SUM ( fact_flights[late_aircraft_delay_min] )
+
+Total Delay Minutes =
+    [Carrier Delay Minutes] + [Weather Delay Minutes] + [NAS Delay Minutes]
+    + [Security Delay Minutes] + [Late Aircraft Delay Minutes]
+
+// Destination-based analysis using the inactive relationship
+Flights To Destination =
+CALCULATE (
+    [Total Flights],
+    USERELATIONSHIP ( fact_flights[dest_airport_key], dim_airport[airport_key] )
+)

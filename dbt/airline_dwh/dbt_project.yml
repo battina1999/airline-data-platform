@@ -1,0 +1,28 @@
+name: "airline_dwh"
+version: "1.0.0"
+config-version: 2
+
+profile: "airline_dwh"
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  airline_dwh:
+    staging:
+      +materialized: view
+      +schema: staging
+    marts:
+      +materialized: table
+      +schema: marts
+
+seeds:
+  airline_dwh:
+    +schema: raw

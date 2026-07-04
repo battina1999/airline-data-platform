@@ -1,0 +1,235 @@
+{
+  "summary": {
+    "total": 25,
+    "passed": 22,
+    "failed": 3,
+    "critical_failed": 3
+  },
+  "results": [
+    {
+      "table": "flights",
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "flight_id",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 60180
+    },
+    {
+      "table": "flights",
+      "expectation": "expect_column_values_to_be_unique",
+      "column": "flight_id",
+      "severity": "critical",
+      "success": false,
+      "unexpected_count": 360,
+      "element_count": 60180
+    },
+    {
+      "table": "flights",
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "flight_date",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 60180
+    },
+    {
+      "table": "flights",
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "carrier_code",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 60180
+    },
+    {
+      "table": "flights",
+      "expectation": "expect_column_values_to_be_in_set",
+      "column": "origin",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 60180
+    },
+    {
+      "table": "flights",
+      "expectation": "expect_column_values_to_be_in_set",
+      "column": "dest",
+      "severity": "critical",
+      "success": false,
+      "unexpected_count": 89,
+      "element_count": 60180
+    },
+    {
+      "table": "flights",
+      "expectation": "expect_column_values_to_be_in_set",
+      "column": "cancelled",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 60180
+    },
+    {
+      "table": "flights",
+      "expectation": "expect_column_values_to_be_in_set",
+      "column": "cancellation_code",
+      "severity": "warn",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 60180
+    },
+    {
+      "table": "flights",
+      "expectation": "expect_column_values_to_be_between",
+      "column": "dep_delay_min",
+      "severity": "critical",
+      "success": false,
+      "unexpected_count": 116,
+      "element_count": 60180
+    },
+    {
+      "table": "flights",
+      "expectation": "expect_column_values_to_be_between",
+      "column": "arr_delay_min",
+      "severity": "warn",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 60180
+    },
+    {
+      "table": "flights",
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "tail_number",
+      "severity": "warn",
+      "success": true,
+      "unexpected_count": 337,
+      "element_count": 60180
+    },
+    {
+      "table": "flights",
+      "expectation": "expect_table_row_count_to_be_between",
+      "column": "(table)",
+      "severity": "warn",
+      "success": true,
+      "unexpected_count": null,
+      "element_count": null
+    },
+    {
+      "table": "airports",
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "airport_code",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 40
+    },
+    {
+      "table": "airports",
+      "expectation": "expect_column_values_to_be_unique",
+      "column": "airport_code",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 40
+    },
+    {
+      "table": "airports",
+      "expectation": "expect_column_value_lengths_to_equal",
+      "column": "airport_code",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 40
+    },
+    {
+      "table": "airports",
+      "expectation": "expect_column_values_to_be_between",
+      "column": "latitude",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 40
+    },
+    {
+      "table": "airports",
+      "expectation": "expect_column_values_to_be_between",
+      "column": "longitude",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 40
+    },
+    {
+      "table": "carriers",
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "carrier_code",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 10
+    },
+    {
+      "table": "carriers",
+      "expectation": "expect_column_values_to_be_unique",
+      "column": "carrier_code",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 10
+    },
+    {
+      "table": "carriers",
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "carrier_name",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 10
+    },
+    {
+      "table": "weather",
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "weather_date",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 3640
+    },
+    {
+      "table": "weather",
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "airport_code",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 3640
+    },
+    {
+      "table": "weather",
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "precipitation_in",
+      "severity": "warn",
+      "success": true,
+      "unexpected_count": 83,
+      "element_count": 3640
+    },
+    {
+      "table": "weather",
+      "expectation": "expect_column_values_to_be_between",
+      "column": "temperature_f",
+      "severity": "warn",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 3640
+    },
+    {
+      "table": "weather",
+      "expectation": "expect_column_values_to_be_in_set",
+      "column": "is_severe",
+      "severity": "critical",
+      "success": true,
+      "unexpected_count": 0,
+      "element_count": 3640
+    }
+  ]
+}

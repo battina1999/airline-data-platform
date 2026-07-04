@@ -1,0 +1,24 @@
+# Two targets, ONE set of models.
+#   local     -> DuckDB file written by the ingestion step (default)
+#   snowflake -> the exact same dbt models, pointed at Snowflake
+#
+# Switch with:  dbt build --target snowflake   (after `pip install dbt-snowflake`)
+airline_dwh:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', '../../warehouse/airline.duckdb') }}"
+      schema: main
+      threads: 4
+
+    snowflake:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT', '') }}"
+      user: "{{ env_var('SNOWFLAKE_USER', '') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD', '') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'TRANSFORM_ROLE') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'COMPUTE_WH') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'AIRLINE_DWH') }}"
+      schema: "{{ env_var('SNOWFLAKE_SCHEMA', 'RAW') }}"
+      threads: 8

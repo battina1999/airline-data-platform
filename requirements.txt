@@ -1,0 +1,36 @@
+# ------------------------------------------------------------------
+# AI-Ready Airline Data Pipeline & Analytics Platform
+# Core pipeline dependencies (local-first, cloud-ready)
+# ------------------------------------------------------------------
+# Warehouse
+duckdb>=1.1,<2.0            # local embedded warehouse (Snowflake stand-in)
+
+# Transformations (dbt)
+dbt-core>=1.8,<1.10
+dbt-duckdb>=1.8,<1.10       # local adapter
+# dbt-snowflake>=1.8,<1.10  # uncomment to run against real Snowflake
+
+# Data quality
+great-expectations>=0.18,<0.19
+
+# Data handling
+pandas>=2.0
+numpy>=1.24
+pyarrow>=14.0
+Faker>=24.0                # realistic synthetic source data
+python-dotenv>=1.0
+tabulate>=0.9             # pretty reconciliation reports
+
+# Dashboard (runnable, free Power BI stand-in)
+streamlit>=1.30
+plotly>=5.18
+
+# Reporting + tests
+matplotlib>=3.7          # static charts for docs/report
+reportlab>=4.0           # project report PDF
+pytest>=8.0
+
+# ------------------------------------------------------------------
+# Airflow runs in its own container (see airflow/requirements-airflow.txt)
+# so it does not constrain the versions above.
+# ------------------------------------------------------------------

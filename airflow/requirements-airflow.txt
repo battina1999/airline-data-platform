@@ -1,0 +1,10 @@
+# Extra libraries baked into the Airflow workers (also passed via
+# _PIP_ADDITIONAL_REQUIREMENTS in docker-compose.yml).
+duckdb>=1.1
+dbt-core>=1.8
+dbt-duckdb>=1.8
+great-expectations>=0.18
+pandas>=2.0
+Faker>=24.0
+tabulate>=0.9
+python-dotenv>=1.0

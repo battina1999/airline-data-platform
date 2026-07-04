@@ -1,0 +1,71 @@
+version: 2
+
+models:
+  # ---------------- dimensions ----------------
+  - name: dim_date
+    description: "Conformed date dimension covering the data range."
+    columns:
+      - name: date_key
+        tests: [unique, not_null]
+
+  - name: dim_airport
+    description: "Airport dimension with surrogate key, hub flag and region."
+    columns:
+      - name: airport_key
+        tests: [unique, not_null]
+      - name: airport_code
+        tests: [unique, not_null]
+
+  - name: dim_airline
+    description: "Airline dimension with surrogate key and carrier type."
+    columns:
+      - name: airline_key
+        tests: [unique, not_null]
+      - name: carrier_code
+        tests: [unique, not_null]
+
+  # ---------------- facts ----------------
+  - name: fact_flights
+    description: "One row per flight with FKs to all dimensions and delay measures."
+    columns:
+      - name: flight_id
+        tests: [unique, not_null]
+      - name: date_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+      - name: origin_airport_key
+        tests:
+          - relationships:
+              to: ref('dim_airport')
+              field: airport_key
+      - name: dest_airport_key
+        tests:
+          - relationships:
+              to: ref('dim_airport')
+              field: airport_key
+      - name: airline_key
+        tests:
+          - relationships:
+              to: ref('dim_airline')
+              field: airline_key
+
+  - name: fact_flight_delays
+    description: "One row per flight per contributing delay cause."
+    columns:
+      - name: delay_cause
+        tests:
+          - accepted_values:
+              values: ['Carrier', 'Weather', 'NAS', 'Security', 'Late Aircraft']
+
+  # ---------------- analytics marts ----------------
+  - name: route_performance
+    description: "On-time %, delays and cancellations per route."
+  - name: delay_trends
+    description: "Daily delay + cancellation trend with calendar attributes."
+  - name: cancellations
+    description: "Cancellation counts by reason and carrier."
+  - name: operational_kpis
+    description: "Per-carrier executive KPI summary."

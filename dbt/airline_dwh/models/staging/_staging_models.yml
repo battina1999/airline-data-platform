@@ -1,0 +1,46 @@
+version: 2
+
+models:
+  - name: stg_flights
+    description: >
+      Cleaned, de-duplicated flight feed at one row per flight_id. Sentinel
+      delays nulled, orphan-airport flights removed, delay/on-time flags derived.
+    columns:
+      - name: flight_id
+        description: "Natural key of a flight event."
+        tests:
+          - unique
+          - not_null
+      - name: origin_airport
+        tests:
+          - not_null
+      - name: dest_airport
+        tests:
+          - not_null
+      - name: delay_bucket
+        tests:
+          - accepted_values:
+              values: ['early', 'on_time', 'minor_delay', 'major_delay', 'severe_delay', 'unknown']
+
+  - name: stg_airports
+    description: "Cleaned airport master data, one row per airport_code."
+    columns:
+      - name: airport_code
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_carriers
+    description: "Cleaned carrier master data."
+    columns:
+      - name: carrier_code
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_weather
+    description: "Cleaned daily weather per airport."
+    columns:
+      - name: airport_code
+        tests:
+          - not_null

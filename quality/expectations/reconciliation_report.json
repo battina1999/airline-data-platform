@@ -1,0 +1,45 @@
+{
+  "overall": "PASS",
+  "detail": [
+    {
+      "source": "flights",
+      "source_rows": 60180,
+      "raw_rows": 60180,
+      "load_fidelity": true,
+      "duplicates_removed": 180,
+      "staging_rows": 59911,
+      "rows_filtered_by_dq": 89,
+      "status": "RECONCILED"
+    },
+    {
+      "source": "airports",
+      "source_rows": 40,
+      "raw_rows": 40,
+      "load_fidelity": true,
+      "duplicates_removed": 0,
+      "staging_rows": 40,
+      "rows_filtered_by_dq": 0,
+      "status": "RECONCILED"
+    },
+    {
+      "source": "carriers",
+      "source_rows": 10,
+      "raw_rows": 10,
+      "load_fidelity": true,
+      "duplicates_removed": 0,
+      "staging_rows": 10,
+      "rows_filtered_by_dq": 0,
+      "status": "RECONCILED"
+    },
+    {
+      "source": "weather",
+      "source_rows": 3640,
+      "raw_rows": 3640,
+      "load_fidelity": true,
+      "duplicates_removed": 0,
+      "staging_rows": 3640,
+      "rows_filtered_by_dq": 0,
+      "status": "RECONCILED"
+    }
+  ]
+}

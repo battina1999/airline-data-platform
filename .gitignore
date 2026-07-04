@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Warehouse / data artifacts
+warehouse/
+*.duckdb
+*.duckdb.wal
+data/raw/*.csv
+data/raw/*.parquet
+!data/raw/.gitkeep
+
+# dbt
+dbt/airline_dwh/target/
+dbt/airline_dwh/dbt_packages/
+dbt/airline_dwh/logs/
+dbt/airline_dwh/.user.yml
+logs/
+
+# pytest
+.pytest_cache/
+
+# Great Expectations local artifacts
+quality/expectations/uncommitted/
+
+# Generated BI exports + doc previews
+dashboards/powerbi/export/
+docs/img/_preview_*.png
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.log
