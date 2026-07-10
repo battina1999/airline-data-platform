@@ -26,7 +26,13 @@ models:
 
   # ---------------- facts ----------------
   - name: fact_flights
-    description: "One row per flight with FKs to all dimensions and delay measures."
+    description: >
+      One row per flight with FKs to all dimensions and delay measures.
+      INCREMENTAL (delete+insert on flight_id): scheduled runs process only new
+      flight_dates plus a 3-day lookback window for late/corrected records —
+      idempotent by key, so reprocessing a window never duplicates rows.
+      Use --full-refresh to rebuild history. On Snowflake the same strategy
+      compiles to a transactional DELETE+INSERT; no model changes needed.
     columns:
       - name: flight_id
         tests: [unique, not_null]
