@@ -1,7 +1,13 @@
 """
-Ingestion driver: extract every source and load it into the raw warehouse.
+Ingestion driver: land every source into the raw warehouse.
 
-    python -m ingestion.run_ingestion
+    python -m ingestion.run_ingestion                # synthetic (default)
+    DATA_SOURCE=bts python -m ingestion.run_ingestion  # real US DOT data
+
+Two source modes, one raw contract:
+  * synthetic — extract CSVs from the generator, load via pandas (small data).
+  * bts       — real BTS monthly files loaded directly by DuckDB (6M+ rows),
+                see ingestion/bts_adapter.py.
 
 Talend analogy: this is the parent Job that wires the input components
 (extract) to the database output components (load) and records run metadata.
@@ -24,9 +30,35 @@ SOURCE_TO_TABLE = {
 }
 
 
+def run_bts() -> None:
+    """Real-data mode: land BTS monthly files straight into raw via DuckDB."""
+    from ingestion.bts_adapter import bts_files, load_bts
+
+    files = bts_files()
+    if not files:
+        raise FileNotFoundError(
+            f"DATA_SOURCE=bts but no CSVs found in {settings.bts_data_dir}. "
+            "Download monthly 'Reporting Carrier On-Time Performance' files from "
+            "transtats.bts.gov and place them there."
+        )
+    logger.info("=== ingestion (source=bts, %d files, warehouse=%s) ===",
+                len(files), settings.warehouse)
+    con = get_duckdb_connection()
+    try:
+        stats = load_bts(con)
+        logger.info("=== BTS ingestion complete: %s flights ===", f"{stats['flights']:,}")
+    finally:
+        con.close()
+
+
 def run() -> None:
+    if settings.data_source == "bts":
+        run_bts()
+        return
+
     batch_id = new_batch_id()
-    logger.info("=== ingestion batch %s (warehouse=%s) ===", batch_id, settings.warehouse)
+    logger.info("=== ingestion batch %s (source=synthetic, warehouse=%s) ===",
+                batch_id, settings.warehouse)
 
     frames = extract_all()
 

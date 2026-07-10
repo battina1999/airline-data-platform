@@ -1,11 +1,17 @@
 # ==================================================================
 # Airline Data Platform - developer entrypoints
 # Run `make help` to see everything.
+#
+# Data source (synthetic | bts):
+#   make pipeline                 # synthetic demo data
+#   make pipeline SOURCE=bts      # real US DOT BTS data (see docs/data_profile.md)
 # ==================================================================
 .DEFAULT_GOAL := help
 SHELL := /bin/bash
 
 DBT_DIR := dbt/airline_dwh
+SOURCE ?= synthetic
+export DATA_SOURCE := $(SOURCE)
 
 .PHONY: help setup generate ingest quality dbt-deps dbt-build reconcile pipeline dashboard test clean docker-up docker-down
 
@@ -34,8 +40,12 @@ dbt-build: ## Build + test all dbt models (staging -> dims/facts -> marts)
 reconcile: ## Source-to-target row-count reconciliation
 	python -m quality.reconciliation
 
-pipeline: generate ingest quality dbt-build reconcile ## Run the entire pipeline end-to-end (no Docker needed)
+pipeline: ## Run the entire pipeline end-to-end (SOURCE=synthetic|bts)
+	python -m orchestration.run_pipeline
 	@echo "Pipeline complete. Launch the dashboard with: make dashboard"
+
+profile-data: ## Profile the BTS files -> docs/data_profile.md
+	python scripts/profile_data.py
 
 dashboard: ## Launch the Streamlit analytics dashboard
 	streamlit run dashboards/streamlit_app.py
