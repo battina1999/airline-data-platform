@@ -21,7 +21,10 @@ clean-targets:
 models:
   airline_dwh:
     staging:
-      +materialized: view
+      # table (not view): stg_flights de-duplicates with a window function over
+      # millions of rows — materializing computes it once instead of once per
+      # downstream model.
+      +materialized: table
       +schema: staging
     marts:
       +materialized: table
