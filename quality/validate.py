@@ -36,7 +36,46 @@ logger = get_logger("quality.validate")
 VALID_AIRPORTS = [a[0] for a in AIRPORTS]
 REPORT_PATH = settings.data_raw_dir.parent.parent / "quality" / "expectations" / "validation_report.json"
 
-# --- declarative expectation suites (expectation, kwargs, severity) ----------
+# --- suites for REAL BTS data (quirks documented in docs/data_profile.md) ----
+BTS_SUITES: dict[str, list[dict]] = {
+    "flights": [
+        {"e": "expect_column_values_to_not_be_null", "k": {"column": "flight_id"}, "sev": "critical"},
+        # real data contains double-reported flights: surface (don't fail) them
+        {"e": "expect_compound_columns_to_be_unique",
+         "k": {"column_list": ["flight_date", "carrier_code", "flight_number",
+                               "origin", "scheduled_departure_min"], "mostly": 0.999},
+         "sev": "warn"},
+        {"e": "expect_column_values_to_not_be_null", "k": {"column": "flight_date"}, "sev": "critical"},
+        {"e": "expect_column_values_to_not_be_null", "k": {"column": "carrier_code"}, "sev": "critical"},
+        {"e": "expect_column_values_to_match_regex", "k": {"column": "origin", "regex": "^[A-Z0-9]{3}$"}, "sev": "critical"},
+        {"e": "expect_column_values_to_match_regex", "k": {"column": "dest", "regex": "^[A-Z0-9]{3}$"}, "sev": "critical"},
+        {"e": "expect_column_values_to_be_in_set", "k": {"column": "cancelled", "value_set": [0, 1]}, "sev": "critical"},
+        # BTS quirk: delay is NULL on (most) cancelled flights — expected, not an error
+        {"e": "expect_column_values_to_be_null",
+         "k": {"column": "dep_delay_min", "row_condition": "cancelled==1",
+               "condition_parser": "pandas", "mostly": 0.9}, "sev": "warn"},
+        {"e": "expect_column_values_to_be_between",
+         "k": {"column": "dep_delay_min", "min_value": -60, "max_value": 2000}, "sev": "warn"},
+        {"e": "expect_column_values_to_be_between",
+         "k": {"column": "arr_delay_min", "min_value": -90, "max_value": 2200}, "sev": "warn"},
+        {"e": "expect_column_values_to_be_between",
+         "k": {"column": "distance_miles", "min_value": 10, "max_value": 6000}, "sev": "critical"},
+        {"e": "expect_table_row_count_to_be_between", "k": {"min_value": 100_000, "max_value": 50_000_000}, "sev": "warn"},
+    ],
+    "airports": [
+        {"e": "expect_column_values_to_not_be_null", "k": {"column": "airport_code"}, "sev": "critical"},
+        {"e": "expect_column_values_to_be_unique", "k": {"column": "airport_code"}, "sev": "critical"},
+        {"e": "expect_column_value_lengths_to_equal", "k": {"column": "airport_code", "value": 3}, "sev": "critical"},
+    ],
+    "carriers": [
+        {"e": "expect_column_values_to_not_be_null", "k": {"column": "carrier_code"}, "sev": "critical"},
+        {"e": "expect_column_values_to_be_unique", "k": {"column": "carrier_code"}, "sev": "critical"},
+        {"e": "expect_column_values_to_not_be_null", "k": {"column": "carrier_name"}, "sev": "critical"},
+    ],
+    "weather": [],  # no BTS weather feed; table is an empty contract
+}
+
+# --- suites for the SYNTHETIC generator (original defect injection) ----------
 SUITES: dict[str, list[dict]] = {
     "flights": [
         {"e": "expect_column_values_to_not_be_null", "k": {"column": "flight_id"}, "sev": "critical"},
@@ -74,16 +113,29 @@ SUITES: dict[str, list[dict]] = {
 }
 
 
+BTS_SAMPLE_ROWS = 300_000  # GE runs on pandas; sample big real tables, full checks live in SQL
+
+
 def _load_raw(table: str):
+    """Load a raw table for validation. In bts mode, large tables are sampled
+    (deterministic) so pandas-based GE stays fast; full-table row counts and
+    duplicate accounting are enforced by the SQL reconciliation step."""
     con = get_duckdb_connection(read_only=True)
     try:
-        return con.sql(f"SELECT * FROM {settings.raw_schema}.{table}").df()
+        fq = f"{settings.raw_schema}.{table}"
+        n = con.sql(f"SELECT count(*) FROM {fq}").fetchone()[0]
+        if settings.data_source == "bts" and n > BTS_SAMPLE_ROWS:
+            return con.sql(
+                f"SELECT * FROM {fq} USING SAMPLE {BTS_SAMPLE_ROWS} ROWS (reservoir, 42)"
+            ).df()
+        return con.sql(f"SELECT * FROM {fq}").df()
     finally:
         con.close()
 
 
-def _validate_table(context, source, table: str, specs: list[dict]) -> list[dict]:
-    df = _load_raw(table)
+def _validate_table(context, source, table: str, specs: list[dict], df=None) -> list[dict]:
+    if df is None:
+        df = _load_raw(table)
     asset = source.add_dataframe_asset(name=table)
     batch_request = asset.build_batch_request(dataframe=df)
     validator = context.get_validator(batch_request=batch_request)
@@ -106,13 +158,22 @@ def _validate_table(context, source, table: str, specs: list[dict]) -> list[dict
 
 
 def run(strict: bool = False) -> int:
-    logger.info("=== Great Expectations validation of raw layer ===")
+    suites = BTS_SUITES if settings.data_source == "bts" else SUITES
+    logger.info("=== Great Expectations validation of raw layer (source=%s) ===",
+                settings.data_source)
     context = gx.get_context(mode="ephemeral")
     source = context.sources.add_pandas("raw_pandas")
 
     all_results: list[dict] = []
-    for table, specs in SUITES.items():
-        all_results.extend(_validate_table(context, source, table, specs))
+    for table, specs in suites.items():
+        if not specs:
+            logger.info("  (skipping '%s': no expectations for this source)", table)
+            continue
+        df = _load_raw(table)
+        if df.empty:
+            logger.info("  (skipping '%s': table is empty in this source mode)", table)
+            continue
+        all_results.extend(_validate_table(context, source, table, specs, df=df))
 
     passed = [r for r in all_results if r["success"]]
     failed = [r for r in all_results if not r["success"]]
