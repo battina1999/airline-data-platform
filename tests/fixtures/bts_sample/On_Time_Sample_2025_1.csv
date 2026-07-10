@@ -1,0 +1,17 @@
+"FlightDate","Reporting_Airline","Flight_Number_Reporting_Airline","Tail_Number","Origin","OriginCityName","OriginState","Dest","DestCityName","DestState","CRSDepTime","CRSElapsedTime","DepDelay","ArrDelay","Cancelled","CancellationCode","Diverted","Distance","CarrierDelay","WeatherDelay","NASDelay","SecurityDelay","LateAircraftDelay"
+2025-01-15,"AA","104","N195CP","ATL","Atlanta, GA","GA","DFW","Dallas/Fort Worth, TX","TX","0730","150","-5.00","-9.00",0.00,"",0.00,"731.00",,,,,
+2025-01-15,"DL","2377","N882DN","ATL","Atlanta, GA","GA","JFK","New York, NY","NY","0845","135","12.00","8.00",0.00,"",0.00,"760.00",,,,,
+2025-01-15,"UA","523","N37502","ORD","Chicago, IL","IL","DEN","Denver, CO","CO","0915","165","45.00","52.00",0.00,"",0.00,"888.00","20.00","0.00","22.00","0.00","10.00"
+2025-01-15,"WN","1881","N8320J","DAL","Dallas, TX","TX","HOU","Houston, TX","TX","1005","65","3.00","-2.00",0.00,"",0.00,"239.00",,,,,
+2025-01-15,"B6","816","N981JB","BOS","Boston, MA","MA","FLL","Fort Lauderdale, FL","FL","1120","201","0.00","-11.00",0.00,"",0.00,"1237.00",,,,,
+2025-01-15,"AA","2718","","LGA","New York, NY","NY","MIA","Miami, FL","FL","1230","195",,,1.00,"B",0.00,"1096.00",,,,,
+2025-01-15,"NK","417","N649NK","BOI","Boise, ID","ID","LAS","Las Vegas, NV","NV","1310","110","7.00","2.00",0.00,"",0.00,"519.00",,,,,
+2025-01-15,"F9","1204","N705FR","DEN","Denver, CO","CO","PHX","Phoenix, AZ","AZ","1355","125","88.00","95.00",0.00,"",0.00,"602.00","0.00","60.00","15.00","0.00","20.00"
+2025-01-15,"DL","989","N816DN","MSP","Minneapolis, MN","MN","SEA","Seattle, WA","WA","1440","225","-3.00","-15.00",0.00,"",0.00,"1399.00",,,,,
+2025-01-15,"UA","523","N37502","ORD","Chicago, IL","IL","DEN","Denver, CO","CO","0915","165","45.00","52.00",0.00,"",0.00,"888.00","20.00","0.00","22.00","0.00","10.00"
+2025-01-16,"AS","65","N625VA","SEA","Seattle, WA","WA","ANC","Anchorage, AK","AK","0600","210","2.00","-6.00",0.00,"",0.00,"1448.00",,,,,
+2025-01-16,"HA","23","N391HA","HNL","Honolulu, HI","HI","OGG","Kahului, HI","HI","0710","42","-1.00","-4.00",0.00,"",0.00,"100.00",,,,,
+2025-01-16,"AA","1042","N101NN","CLT","Charlotte, NC","NC","ATL","Atlanta, GA","GA","0820","85","210.00","198.00",0.00,"",0.00,"226.00","150.00","0.00","28.00","0.00","20.00"
+2025-01-16,"WN","2200","N7844A","MDW","Chicago, IL","IL","STL","St. Louis, MO","MO","0930","70",,,1.00,"A",0.00,"251.00",,,,,
+2025-01-16,"G4","702","N247NV","SFB","Sanford, FL","FL","PIT","Pittsburgh, PA","PA","1015","140","5.00","1.00",0.00,"",0.00,"839.00",,,,,
+2025-01-16,"DL","404","N902DA","ATL","Atlanta, GA","GA","LAX","Los Angeles, CA","CA","1100","290","-2.00","-20.00",0.00,"",1.00,"1947.00",,,,,
