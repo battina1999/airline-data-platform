@@ -8,6 +8,10 @@ model-paths: ["models"]
 seed-paths: ["seeds"]
 test-paths: ["tests"]
 macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+vars:
+  lookback_days: 3  # incremental late-data window for fact_flights
 
 target-path: "target"
 clean-targets:
@@ -17,7 +21,10 @@ clean-targets:
 models:
   airline_dwh:
     staging:
-      +materialized: view
+      # table (not view): stg_flights de-duplicates with a window function over
+      # millions of rows — materializing computes it once instead of once per
+      # downstream model.
+      +materialized: table
       +schema: staging
     marts:
       +materialized: table

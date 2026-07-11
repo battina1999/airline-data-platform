@@ -1,0 +1,11 @@
+# Minimal deps for CI (no dashboard/report libs -> fast, cache-friendly builds)
+duckdb>=1.1,<2.0
+dbt-core>=1.8,<1.10
+dbt-duckdb>=1.8,<1.10
+great-expectations>=0.18,<0.19
+pandas>=2.0
+numpy>=1.24,<2.0
+Faker>=24.0
+python-dotenv>=1.0
+tabulate>=0.9
+pytest>=8.0

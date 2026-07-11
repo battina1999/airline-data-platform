@@ -1,0 +1,58 @@
+name: Publish dbt docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-ci.txt
+
+      - name: Build warehouse from the committed sample
+        env:
+          DATA_SOURCE: bts
+          BTS_DATA_DIR: ${{ github.workspace }}/tests/fixtures/bts_sample
+        run: python -m orchestration.run_pipeline
+
+      - name: Generate dbt docs (catalog + lineage)
+        run: cd dbt/airline_dwh && dbt docs generate --profiles-dir . --static
+
+      - name: Prepare Pages payload (self-contained static site)
+        run: |
+          mkdir -p pages
+          cp dbt/airline_dwh/target/static_index.html pages/index.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages
+
+  deploy:
+    needs: build-docs
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -4,6 +4,10 @@ sources:
   - name: raw
     description: "Raw landing zone populated by the Python ingestion job (Talend-style extract + load)."
     schema: raw
+    loaded_at_field: _loaded_at
+    freshness:
+      warn_after: {count: 36, period: hour}
+      error_after: {count: 72, period: hour}
     tables:
       - name: flights
         description: "Operational flight feed, one row per flight event (contains raw defects)."
@@ -12,4 +16,5 @@ sources:
       - name: carriers
         description: "Airline carrier master data."
       - name: weather
-        description: "Daily weather per airport."
+        description: "Daily weather per airport. Empty in BTS mode (no weather feed) — optional enrichment."
+        freshness: null  # optional source: absent by design in bts mode

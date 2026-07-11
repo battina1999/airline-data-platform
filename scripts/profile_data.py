@@ -26,53 +26,62 @@ KEY_COLS = ["FlightDate", "Reporting_Airline", "Tail_Number", "Origin", "Dest",
 
 
 def main() -> None:
-    files = sorted(settings.bts_data_dir.glob("*.csv"))
+    files = sorted(settings.bts_data_dir.rglob("*.csv"))
     if not files:
         print(f"No BTS csvs found in {settings.bts_data_dir} — nothing to profile.")
         sys.exit(1)
 
-    pattern = str(settings.bts_data_dir / "*.csv").replace("'", "''")
-    rel = (f"read_csv('{pattern}', header=true, union_by_name=true, "
-           f"sample_size=200000, ignore_errors=true)")
+    pattern = str(settings.bts_data_dir / "**" / "*.csv").replace("'", "''")
     con = duckdb.connect()
 
-    total = con.sql(f"SELECT count(*) FROM {rel}").fetchone()[0]
-    per_file = con.sql(
-        f"SELECT regexp_extract(filename, '([^/\\\\]+)$', 1) f, count(*) n "
+    # single scan of the (possibly multi-GB) CSVs into a columnar temp table,
+    # keeping ONLY the profiled columns (the raw extract has ~110)
+    print(f"scanning {len(files)} files once ...")
+    needed = set(KEY_COLS) | {"Flight_Number_Reporting_Airline", "CRSDepTime"}
+    col_list = ", ".join(f'"{c}"' for c in needed)
+    con.execute(
+        f"CREATE OR REPLACE TEMP TABLE t AS SELECT {col_list}, "
+        f"regexp_extract(filename, '([^/\\\\]+)$', 1) AS _f "
         f"FROM read_csv('{pattern}', header=true, union_by_name=true, "
-        f"sample_size=200000, ignore_errors=true, filename=true) GROUP BY 1 ORDER BY 1"
-    ).fetchall()
+        f"sample_size=200000, ignore_errors=true, filename=true)"
+    )
+    rel = "t"
 
-    cols_present = [r[0] for r in con.sql(f"SELECT name FROM (DESCRIBE SELECT * FROM {rel} LIMIT 1)").fetchall()]
+    total = con.sql("SELECT count(*) FROM t").fetchone()[0]
+    per_file = con.sql("SELECT _f, count(*) FROM t GROUP BY 1 ORDER BY 1").fetchall()
+
+    cols_present = [r[0] for r in con.sql(
+        "SELECT column_name FROM (DESCRIBE SELECT * FROM t LIMIT 1)").fetchall()]
     prof_cols = [c for c in KEY_COLS if c in cols_present]
 
-    null_rates = {}
-    for c in prof_cols:
-        n_null = con.sql(f'SELECT count(*) FROM {rel} WHERE "{c}" IS NULL').fetchone()[0]
-        null_rates[c] = 100.0 * n_null / total if total else 0
+    null_exprs = ", ".join(
+        f'sum(CASE WHEN "{c}" IS NULL THEN 1 ELSE 0 END)' for c in prof_cols)
+    null_counts = con.sql(f"SELECT {null_exprs} FROM t").fetchone()
+    null_rates = {c: (100.0 * n / total if total else 0)
+                  for c, n in zip(prof_cols, null_counts)}
 
-    carriers = con.sql(f'SELECT count(DISTINCT "Reporting_Airline") FROM {rel}').fetchone()[0]
+    carriers = con.sql('SELECT count(DISTINCT "Reporting_Airline") FROM t').fetchone()[0]
     airports = con.sql(
-        f'SELECT count(DISTINCT code) FROM (SELECT "Origin" code FROM {rel} '
-        f'UNION SELECT "Dest" FROM {rel})').fetchone()[0]
-    date_range = con.sql(f'SELECT min("FlightDate"), max("FlightDate") FROM {rel}').fetchone()
+        'SELECT count(DISTINCT code) FROM (SELECT "Origin" code FROM t '
+        'UNION SELECT "Dest" FROM t)').fetchone()[0]
+    date_range = con.sql('SELECT min("FlightDate"), max("FlightDate") FROM t').fetchone()
 
     delay_stats = con.sql(
-        f'SELECT min("DepDelay"), max("DepDelay"), round(avg("DepDelay"),2), '
-        f'min("ArrDelay"), max("ArrDelay"), round(avg("ArrDelay"),2) FROM {rel}'
+        'SELECT min("DepDelay"), max("DepDelay"), round(avg("DepDelay"),2), '
+        'min("ArrDelay"), max("ArrDelay"), round(avg("ArrDelay"),2) FROM t'
     ).fetchone()
 
-    cancelled = con.sql(f'SELECT count(*) FROM {rel} WHERE "Cancelled" = 1').fetchone()[0]
+    cancelled = con.sql('SELECT count(*) FROM t WHERE "Cancelled" = 1').fetchone()[0]
     cancelled_null_delay = con.sql(
-        f'SELECT count(*) FROM {rel} WHERE "Cancelled" = 1 AND "DepDelay" IS NULL').fetchone()[0]
+        'SELECT count(*) FROM t WHERE "Cancelled" = 1 AND "DepDelay" IS NULL').fetchone()[0]
 
     dup_keys = con.sql(
-        f'SELECT count(*) - count(DISTINCT ("FlightDate"::VARCHAR || \'|\' || "Reporting_Airline" '
-        f"|| '|' || \"Flight_Number_Reporting_Airline\"::VARCHAR || '|' || \"Origin\" || '|' || "
-        f'coalesce("CRSDepTime"::VARCHAR, \'\'))) FROM {rel}'
+        'SELECT count(*) - count(DISTINCT ("FlightDate"::VARCHAR || \'|\' || "Reporting_Airline" '
+        "|| '|' || \"Flight_Number_Reporting_Airline\"::VARCHAR || '|' || \"Origin\" || '|' || "
+        'coalesce("CRSDepTime"::VARCHAR, \'\'))) FROM t'
     ).fetchone()[0]
 
-    sentinel = con.sql(f'SELECT count(*) FROM {rel} WHERE "DepDelay" <= -900').fetchone()[0]
+    sentinel = con.sql('SELECT count(*) FROM t WHERE "DepDelay" <= -900').fetchone()[0]
     null_tails = null_rates.get("Tail_Number", 0.0)
 
     lines = [

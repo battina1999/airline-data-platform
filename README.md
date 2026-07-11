@@ -7,6 +7,15 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/battina1999/airline-data-platform/actions/workflows/ci.yml"><img src="https://github.com/battina1999/airline-data-platform/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://battina1999.github.io/airline-data-platform/"><img src="https://img.shields.io/badge/dbt%20docs-lineage%20site-FF694B?logo=dbt&logoColor=white" alt="dbt docs"></a>
+</p>
+
+<p align="center">
+  📊 <b><a href="https://battina1999.github.io/airline-data-platform/">Browse the live data catalog & lineage (dbt docs)</a></b>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Python-3.10-3776AB?logo=python&logoColor=white">
   <img src="https://img.shields.io/badge/dbt-1.9-FF694B?logo=dbt&logoColor=white">
   <img src="https://img.shields.io/badge/Apache%20Airflow-2.9-017CEE?logo=apacheairflow&logoColor=white">

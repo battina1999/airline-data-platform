@@ -1,7 +1,28 @@
 -- Central fact table: one row per flight, with surrogate foreign keys to the
 -- date / airport / airline dimensions and all additive delay measures.
+--
+-- INCREMENTAL: on scheduled runs only new flight_dates are processed instead
+-- of rebuilding months of history. Strategy = delete+insert keyed on flight_id
+-- with a {{ var('lookback_days', 3) }}-day lookback window, so late-arriving
+-- or corrected rows inside the window are replaced idempotently (no dupes).
+-- `dbt build --full-refresh` rebuilds from scratch.
+{{ config(
+    materialized='incremental',
+    incremental_strategy='delete+insert',
+    unique_key='flight_id'
+) }}
+
 with flights as (
     select * from {{ ref('stg_flights') }}
+
+    {% if is_incremental() %}
+    -- process only new days (+ lookback window for late/corrected data)
+    where flight_date > (
+        select coalesce(max(flight_date), '1900-01-01'::date)
+               - interval '{{ var("lookback_days", 3) }}' day
+        from {{ this }}
+    )
+    {% endif %}
 )
 
 select

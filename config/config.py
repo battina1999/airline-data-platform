@@ -33,7 +33,7 @@ def _default_bts_dir() -> Path:
     if env:
         return Path(env)
     in_repo = PROJECT_ROOT / "data" / "bts"
-    if in_repo.exists() and any(in_repo.glob("*.csv")):
+    if in_repo.exists() and any(in_repo.rglob("*.csv")):
         return in_repo
     sibling = PROJECT_ROOT.parent / "bts_data"
     if sibling.exists():

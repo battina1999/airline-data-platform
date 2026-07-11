@@ -42,17 +42,48 @@ REQUIRED_COLUMNS = [
 
 
 def bts_files() -> list:
-    return sorted(settings.bts_data_dir.glob("*.csv"))
+    """All BTS csvs under the data dir (recursive: the PREZIP unzips into
+    one folder per month — no need to move files around)."""
+    return sorted(settings.bts_data_dir.rglob("*.csv"))
+
+
+def _glob_pattern() -> str:
+    return str(settings.bts_data_dir / "**" / "*.csv").replace("'", "''")
 
 
 def _rel(with_filename: bool = False) -> str:
-    """read_csv relation over every BTS csv in the data dir."""
-    pattern = str(settings.bts_data_dir / "*.csv").replace("'", "''")
+    """read_csv relation over every BTS csv under the data dir."""
     fn = ", filename=true" if with_filename else ""
     return (
-        f"read_csv('{pattern}', header=true, union_by_name=true, "
+        f"read_csv('{_glob_pattern()}', header=true, union_by_name=true, "
         f"sample_size=200000, ignore_errors=true{fn})"
     )
+
+
+# Columns pulled out of the ~110-column BTS extract into the working set.
+_SELECT_COLS = """
+    FlightDate, Reporting_Airline, Flight_Number_Reporting_Airline, Tail_Number,
+    Origin, OriginCityName, OriginState, Dest, DestCityName, DestState,
+    CRSDepTime, CRSElapsedTime, DepDelay, ArrDelay, Cancelled, CancellationCode,
+    Diverted, Distance, CarrierDelay, WeatherDelay, NASDelay, SecurityDelay,
+    LateAircraftDelay
+"""
+
+
+def materialize_source(con) -> int:
+    """Scan the CSVs ONCE into a temp working table (needed columns only).
+
+    The 1.5GB+ raw files are read a single time; every downstream query
+    (flights load, airport/carrier derivation, counts) hits the columnar temp
+    table instead of re-parsing CSVs — turns ~5 full scans into 1.
+    """
+    con.execute(f"""
+        CREATE OR REPLACE TEMP TABLE _bts_src AS
+        SELECT {_SELECT_COLS},
+               'bts/' || regexp_extract(filename, '([^/\\\\]+)$', 1) AS _src_file
+        FROM {_rel(with_filename=True)}
+    """)
+    return con.execute("SELECT count(*) FROM _bts_src").fetchone()[0]
 
 
 def validate_schema(con) -> list:
@@ -72,8 +103,9 @@ def load_bts(con) -> dict:
     if missing:
         raise ValueError(f"BTS files are missing required columns: {missing}")
 
-    src_rows = con.execute(f"SELECT count(*) FROM {_rel()}").fetchone()[0]
-    logger.info("BTS source rows across %d files: %s", len(bts_files()), f"{src_rows:,}")
+    src_rows = materialize_source(con)
+    logger.info("BTS source rows across %d files: %s (single-scan materialized)",
+                len(bts_files()), f"{src_rows:,}")
 
     # ---------------- flights (direct DuckDB load, no pandas) ----------------
     con.execute(f"""
@@ -108,9 +140,9 @@ def load_bts(con) -> dict:
             coalesce(SecurityDelay::INTEGER, 0)              AS security_delay_min,
             coalesce(LateAircraftDelay::INTEGER, 0)          AS late_aircraft_delay_min,
             CURRENT_TIMESTAMP                                AS _loaded_at,
-            'bts/' || regexp_extract(filename, '([^/\\\\]+)$', 1) AS _source_file,
+            _src_file                                        AS _source_file,
             '{batch_id}'                                     AS _batch_id
-        FROM {_rel(with_filename=True)}
+        FROM _bts_src
     """)
     n_flights = con.execute("SELECT count(*) FROM raw.flights").fetchone()[0]
 
@@ -126,10 +158,10 @@ def load_bts(con) -> dict:
         WITH seen AS (
             SELECT Origin AS code, any_value(OriginCityName) AS city_name,
                    any_value(OriginState) AS state
-            FROM {_rel()} GROUP BY 1
+            FROM _bts_src GROUP BY 1
             UNION ALL
             SELECT Dest, any_value(DestCityName), any_value(DestState)
-            FROM {_rel()} GROUP BY 1
+            FROM _bts_src GROUP BY 1
         ),
         dedup AS (
             SELECT code, any_value(city_name) AS city_name, any_value(state) AS state
@@ -167,7 +199,7 @@ def load_bts(con) -> dict:
             coalesce(r.founded, 0)                 AS founded_year,
             CURRENT_TIMESTAMP AS _loaded_at, 'bts:derived' AS _source_file,
             '{batch_id}' AS _batch_id
-        FROM (SELECT DISTINCT Reporting_Airline AS code FROM {_rel()}) s
+        FROM (SELECT DISTINCT Reporting_Airline AS code FROM _bts_src) s
         LEFT JOIN _carrier_ref r ON s.code = r.code
     """)
     n_carriers = con.execute("SELECT count(*) FROM raw.carriers").fetchone()[0]

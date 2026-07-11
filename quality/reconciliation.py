@@ -41,8 +41,8 @@ def _file_rows(filename: str) -> int:
 
 
 def _bts_source_rows(con) -> int:
-    """Source row count straight from the BTS monthly CSVs (DuckDB, fast)."""
-    pattern = str(settings.bts_data_dir / "*.csv").replace("'", "''")
+    """Independent source row count straight from the BTS monthly CSVs."""
+    pattern = str(settings.bts_data_dir / "**" / "*.csv").replace("'", "''")
     return con.sql(
         f"SELECT count(*) FROM read_csv('{pattern}', header=true, "
         f"union_by_name=true, sample_size=200000, ignore_errors=true)"
