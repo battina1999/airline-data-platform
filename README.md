@@ -53,6 +53,18 @@ The design is **local-first, cloud-ready**: DuckDB by default, and the
 identical dbt models target **Snowflake** by changing one profile. A synthetic
 generator remains behind `--source synthetic` for infrastructure-free demos.
 
+## Results at a glance
+
+| What | Measured result |
+|---|---|
+| Real data ingested | **3,453,795 flights** (US DOT BTS, Feb 2024–Jan 2025, 345 airports, 15 carriers) |
+| Ingestion speed | ~25 s for 1.5 GB of monthly CSVs (single-scan DuckDB materialization) |
+| dbt build on real data | **45/45 models + tests green in ~11 s** |
+| Reconciliation | every row accounted for; **3 genuine duplicates** found + attributed |
+| Data quality | 18 GE expectations on the real schema + 30 dbt tests + freshness SLAs |
+| ML (test = Jan 2025, 6-month gap) | baseline AUC 0.6156 → **LightGBM 0.6223**, **1.6× lift** in riskiest decile |
+| CI | full pipeline (real-format sample + synthetic) on every PR — see badge |
+
 ## Architecture
 
 <p align="center"><img src="docs/img/architecture.png" width="92%" alt="Architecture diagram"></p>
