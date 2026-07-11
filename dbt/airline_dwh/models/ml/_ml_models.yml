@@ -1,0 +1,57 @@
+version: 2
+
+models:
+  - name: fct_features_flight
+    description: >
+      ML feature mart at one row per completed flight, used for both training
+      and batch scoring so features can never drift between the two. All
+      features are computable BEFORE departure (leakage-safe): rolling windows
+      end the day before the flight; congestion counts scheduled departures.
+      Label = departure delay >= 15 minutes. Cancelled flights excluded (no
+      departure, no label).
+    columns:
+      - name: flight_id
+        description: "FK to fact_flights; one row per completed flight."
+        tests: [unique, not_null]
+      - name: is_delayed_dep
+        description: "LABEL: departure delay >= 15 min (US DOT convention)."
+        tests: [not_null]
+      - name: dep_hour
+        description: "Scheduled departure hour 0-23 (schedule fact, known ahead)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+              quote: false
+      - name: day_of_week
+        description: "0=Sunday..6=Saturday from dim_date."
+        tests: [not_null]
+      - name: month
+        description: "Calendar month 1-12 (seasonality)."
+        tests: [not_null]
+      - name: is_weekend
+        description: "Saturday/Sunday flag."
+      - name: distance_miles
+        description: "Great-circle route distance from the schedule."
+        tests: [not_null]
+      - name: distance_bucket
+        description: "short <500mi / medium <1500mi / long >=1500mi."
+        tests:
+          - accepted_values:
+              values: ['short', 'medium', 'long']
+      - name: carrier_type
+        description: "Low-Cost vs Legacy/Network (from dim_airline)."
+      - name: scheduled_departures_hour
+        description: >
+          Congestion: number of departures SCHEDULED at the origin airport in
+          the same local hour. Uses schedule counts only — knowable in advance.
+        tests: [not_null]
+      - name: route_delay_rate_30d
+        description: >
+          Share of this route's flights departing >=15 min late over the 30
+          days ENDING THE DAY BEFORE this flight (window excludes the current
+          day to prevent target leakage). 0 when the route has no history.
+      - name: route_flights_30d
+        description: "Route volume over the same trailing window (support/confidence)."
+      - name: carrier_delay_rate_30d
+        description: "Carrier-level analogue of route_delay_rate_30d, same leakage-safe window."
