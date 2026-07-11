@@ -9,10 +9,14 @@
 <p align="center">
   <a href="https://github.com/battina1999/airline-data-platform/actions/workflows/ci.yml"><img src="https://github.com/battina1999/airline-data-platform/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://battina1999.github.io/airline-data-platform/"><img src="https://img.shields.io/badge/dbt%20docs-lineage%20site-FF694B?logo=dbt&logoColor=white" alt="dbt docs"></a>
+  <img src="https://img.shields.io/badge/data-3.45M%20real%20BTS%20flights-1f3b5c" alt="real data">
 </p>
 
 <p align="center">
-  📊 <b><a href="https://battina1999.github.io/airline-data-platform/">Browse the live data catalog & lineage (dbt docs)</a></b>
+  🚀 <b><a href="https://airline-ops-battina.streamlit.app">LIVE DASHBOARD</a></b> ·
+  📊 <b><a href="https://battina1999.github.io/airline-data-platform/">Data catalog & lineage</a></b> ·
+  📐 <b><a href="docs/kpi_definitions.md">KPI definitions</a></b> ·
+  🔬 <b><a href="docs/data_profile.md">Real-data profile</a></b>
 </p>
 
 <p align="center">
@@ -33,14 +37,21 @@
 ## Why this project
 
 Airlines live and die by operational data — delays, cancellations, on-time
-performance. This project takes messy, multi-source airline data and turns it
-into **governed, tested, analytics-ready** tables and dashboards, using the same
-tools and patterns used on real data platforms: **Python, SQL, dbt, Airflow,
-Great Expectations, a cloud warehouse, and Power BI** — all wrapped in Docker.
+performance. This platform ingests **3,453,795 real flights from the US DOT
+Bureau of Transportation Statistics** (Feb 2024 – Jan 2025, 345 airports, 15
+carriers) and turns them into **governed, tested, analytics-ready** tables and
+dashboards, using the same tools and patterns used on production data
+platforms: **Python, SQL, dbt, Airflow, Great Expectations, a cloud warehouse,
+and Power BI** — all wrapped in Docker.
 
-The headline design goal is **local-first, cloud-ready**: clone it and run the
-whole thing on your laptop against DuckDB in a couple of minutes, or point the
-identical dbt models at **Snowflake** by changing one profile.
+Runs end-to-end on the real data in ~70 seconds on a laptop: single-scan
+DuckDB ingestion (~25s for 1.5 GB of monthly CSVs), Great Expectations
+validation, a 45/45-green dbt build, and row-level source-to-target
+reconciliation that found and accounted for 3 genuine duplicate records.
+
+The design is **local-first, cloud-ready**: DuckDB by default, and the
+identical dbt models target **Snowflake** by changing one profile. A synthetic
+generator remains behind `--source synthetic` for infrastructure-free demos.
 
 ## Architecture
 
