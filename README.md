@@ -30,7 +30,7 @@
   <img src="https://img.shields.io/badge/tests-30%20dbt%20%2B%2025%20GE-2a9d8f">
 </p>
 
-<p align="center"><img src="docs/img/dashboard_overview.png" width="90%" alt="Dashboard overview"></p>
+<p align="center"><img src="docs/img/dashboard_demo.gif" width="90%" alt="Dashboard demo (real data)"></p>
 
 ---
 
