@@ -31,7 +31,7 @@ jobs:
           sdk: docker
           app_port: 7860
           pinned: true
-          short_description: Flight delay-risk predictions trained on 3.4M real US DOT flights.
+          short_description: Flight delay predictions from 3.4M real US DOT flights.
           ---
 
           """
