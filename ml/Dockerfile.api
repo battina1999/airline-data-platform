@@ -1,21 +1,28 @@
 # Delay-risk API image — Hugging Face Spaces (Docker SDK) compatible.
-# Build from the REPO ROOT:  docker build -f ml/Dockerfile.api -t delay-api .
+# Build from the REPO ROOT: docker build -f ml/Dockerfile.api -t delay-api .
 FROM python:3.10-slim
 
-ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
-WORKDIR /app
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PORT=7860
 
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
+    && useradd -m -u 1000 user \
     && rm -rf /var/lib/apt/lists/*
 
-COPY ml/requirements-api.txt .
-RUN pip install --upgrade pip && pip install -r requirements-api.txt
+USER user
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
+WORKDIR $HOME/app
 
-COPY ml/ ml/
-COPY docs/model_card.md docs/model_card.md
+COPY --chown=user:user ml/requirements-api.txt .
+RUN python -m pip install --upgrade pip \
+    && python -m pip install -r requirements-api.txt
 
-# HF Spaces routes traffic to 7860 by default
-ENV PORT=7860
+COPY --chown=user:user ml/ ml/
+COPY --chown=user:user docs/model_card.md docs/model_card.md
+
 EXPOSE 7860
 
-CMD ["sh", "-c", "uvicorn ml.api:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["bash", "-lc", "exec uvicorn ml.api:app --host 0.0.0.0 --port ${PORT}"]
