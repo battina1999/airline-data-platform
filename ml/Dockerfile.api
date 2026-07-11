@@ -1,0 +1,21 @@
+# Delay-risk API image — Hugging Face Spaces (Docker SDK) compatible.
+# Build from the REPO ROOT:  docker build -f ml/Dockerfile.api -t delay-api .
+FROM python:3.10-slim
+
+ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY ml/requirements-api.txt .
+RUN pip install --upgrade pip && pip install -r requirements-api.txt
+
+COPY ml/ ml/
+COPY docs/model_card.md docs/model_card.md
+
+# HF Spaces routes traffic to 7860 by default
+ENV PORT=7860
+EXPOSE 7860
+
+CMD ["sh", "-c", "uvicorn ml.api:app --host 0.0.0.0 --port ${PORT}"]
