@@ -1,0 +1,53 @@
+name: Publish Flight Delay Space
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Prepare Docker Space
+        run: |
+          mkdir -p "$RUNNER_TEMP/space"
+          rsync -a --exclude='.git' --exclude='.github' ./ "$RUNNER_TEMP/space/"
+          cp "$RUNNER_TEMP/space/ml/Dockerfile.api" "$RUNNER_TEMP/space/Dockerfile"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          readme = Path(os.environ["RUNNER_TEMP"]) / "space" / "README.md"
+          metadata = """---
+          title: Flight Delay API
+          emoji: ✈️
+          colorFrom: blue
+          colorTo: indigo
+          sdk: docker
+          app_port: 7860
+          pinned: true
+          short_description: Flight delay-risk predictions trained on 3.4M real US DOT flights.
+          ---
+
+          """
+          readme.write_text(metadata + readme.read_text())
+          PY
+
+      - name: Install Hugging Face CLI
+        run: |
+          curl -LsSf https://hf.co/cli/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Publish Space
+        env:
+          HF_OIDC_RESOURCE: spaces/battina1999/flight-delay-api
+        run: >-
+          hf upload battina1999/flight-delay-api
+          "$RUNNER_TEMP/space" .
+          --repo-type space
+          --commit-message "Publish ${GITHUB_SHA::7}"
