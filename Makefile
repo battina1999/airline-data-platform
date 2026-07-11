@@ -47,6 +47,13 @@ pipeline: ## Run the entire pipeline end-to-end (SOURCE=synthetic|bts)
 profile-data: ## Profile the BTS files -> docs/data_profile.md
 	python scripts/profile_data.py
 
+train: ## Train delay models (baseline first, then LightGBM + model card)
+	python ml/train.py --model baseline
+	python ml/train.py --model lgbm
+
+serve-api: ## Run the delay-risk API (http://localhost:8000)
+	uvicorn ml.api:app --reload --port 8000
+
 dashboard: ## Launch the Streamlit analytics dashboard
 	streamlit run dashboards/streamlit_app.py
 
