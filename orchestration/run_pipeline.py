@@ -25,13 +25,53 @@ logger = get_logger("orchestration")
 DBT_DIR = PROJECT_ROOT / "dbt" / "airline_dwh"
 
 
+def _last_source() -> str | None:
+    """Which DATA_SOURCE last built this warehouse (None on first build)."""
+    import duckdb
+
+    try:
+        con = duckdb.connect(str(settings.duckdb_path))
+        con.execute("CREATE TABLE IF NOT EXISTS main._pipeline_meta "
+                    "(key VARCHAR PRIMARY KEY, value VARCHAR)")
+        row = con.execute(
+            "SELECT value FROM main._pipeline_meta WHERE key = 'last_source'"
+        ).fetchone()
+        con.close()
+        return row[0] if row else None
+    except Exception:
+        return None
+
+
+def _record_source() -> None:
+    import duckdb
+
+    con = duckdb.connect(str(settings.duckdb_path))
+    con.execute("CREATE TABLE IF NOT EXISTS main._pipeline_meta "
+                "(key VARCHAR PRIMARY KEY, value VARCHAR)")
+    con.execute("INSERT OR REPLACE INTO main._pipeline_meta VALUES ('last_source', ?)",
+                [settings.data_source])
+    con.close()
+
+
 def _run_dbt() -> int:
     env = os.environ.copy()
     env.setdefault("DBT_DUCKDB_PATH", str(settings.duckdb_path))
-    proc = subprocess.run(
-        [sys.executable, "-m", "dbt.cli.main", "build", "--profiles-dir", "."],
-        cwd=DBT_DIR, env=env,
-    )
+
+    cmd = [sys.executable, "-m", "dbt.cli.main", "build", "--profiles-dir", "."]
+
+    # SOURCE GUARD: incremental models must never mix rows from different
+    # sources. If this warehouse was last built from a different DATA_SOURCE
+    # (e.g. bts -> synthetic), force a full refresh so facts and dimensions are
+    # rebuilt consistently instead of appending across sources.
+    last = _last_source()
+    if last is not None and last != settings.data_source:
+        logger.warning("source changed since last build (%s -> %s): forcing --full-refresh",
+                       last, settings.data_source)
+        cmd.append("--full-refresh")
+
+    proc = subprocess.run(cmd, cwd=DBT_DIR, env=env)
+    if proc.returncode == 0:
+        _record_source()
     return proc.returncode
 
 
