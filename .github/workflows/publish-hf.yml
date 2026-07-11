@@ -2,6 +2,15 @@ name: Publish Flight Delay Space
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Space runtime to publish
+        required: true
+        default: docker
+        type: choice
+        options:
+          - docker
+          - static
 
 permissions:
   id-token: write
@@ -15,9 +24,10 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Prepare Docker Space
+        if: ${{ inputs.mode == 'docker' }}
         run: |
           mkdir -p "$RUNNER_TEMP/space"
-          rsync -a --exclude='.git' --exclude='.github' ./ "$RUNNER_TEMP/space/"
+          rsync -a --exclude='.git' --exclude='.github' --exclude='hf-static' ./ "$RUNNER_TEMP/space/"
           cp "$RUNNER_TEMP/space/ml/Dockerfile.api" "$RUNNER_TEMP/space/Dockerfile"
           python - <<'PY'
           import os
@@ -38,6 +48,35 @@ jobs:
           readme.write_text(metadata + readme.read_text())
           PY
 
+      - name: Prepare Static Space
+        if: ${{ inputs.mode == 'static' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/space"
+          cp hf-static/index.html "$RUNNER_TEMP/space/index.html"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          readme = Path(os.environ["RUNNER_TEMP"]) / "space" / "README.md"
+          readme.write_text("""---
+          title: Flight Delay API
+          emoji: ✈️
+          colorFrom: blue
+          colorTo: indigo
+          sdk: static
+          app_file: index.html
+          pinned: true
+          short_description: Flight delay predictions from 3.4M real US DOT flights.
+          ---
+
+          # Flight Delay API
+
+          This free static fallback keeps the live airline operations dashboard,
+          API contract, source code, and CI evidence available when hosted CPU is
+          unavailable. Choose `docker` when dispatching this workflow to restore
+          the interactive prediction API.
+          """)
+          PY
+
       - name: Install Hugging Face CLI
         run: |
           curl -LsSf https://hf.co/cli/install.sh | bash
@@ -46,8 +85,9 @@ jobs:
       - name: Publish Space
         env:
           HF_OIDC_RESOURCE: spaces/battina1999/flight-delay-api
+          PUBLISH_MODE: ${{ inputs.mode }}
         run: >-
           hf upload battina1999/flight-delay-api
           "$RUNNER_TEMP/space" .
           --repo-type space
-          --commit-message "Publish ${GITHUB_SHA::7}"
+          --commit-message "Publish ${PUBLISH_MODE} ${GITHUB_SHA::7}"
