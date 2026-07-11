@@ -48,8 +48,12 @@ def main() -> int:
         ("dbt build", _run_dbt),
         ("reconcile", reconcile),
     ]
+    if settings.data_source == "bts":
+        # real data: nothing to generate — the BTS files ARE the source
+        stages = stages[1:]
 
-    logger.info("################ PIPELINE START (warehouse=%s) ################", settings.warehouse)
+    logger.info("################ PIPELINE START (source=%s, warehouse=%s) ################",
+                settings.data_source, settings.warehouse)
     results, failed = [], False
     for name, fn in stages:
         t0 = time.time()

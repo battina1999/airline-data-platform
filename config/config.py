@@ -26,8 +26,27 @@ def _get(name: str, default: str) -> str:
     return os.environ.get(name, default)
 
 
+def _default_bts_dir() -> Path:
+    """Resolve the BTS data directory: env var, in-repo data/bts, or a sibling
+    bts_data/ folder next to the project (handy for local drops)."""
+    env = os.environ.get("BTS_DATA_DIR")
+    if env:
+        return Path(env)
+    in_repo = PROJECT_ROOT / "data" / "bts"
+    if in_repo.exists() and any(in_repo.glob("*.csv")):
+        return in_repo
+    sibling = PROJECT_ROOT.parent / "bts_data"
+    if sibling.exists():
+        return sibling
+    return in_repo
+
+
 @dataclass(frozen=True)
 class Settings:
+    # --- data source: synthetic (default) | bts (real US DOT data) ---
+    data_source: str = field(default_factory=lambda: _get("DATA_SOURCE", "synthetic").lower())
+    bts_data_dir: Path = field(default_factory=_default_bts_dir)
+
     # --- warehouse selection ---
     warehouse: str = field(default_factory=lambda: _get("WAREHOUSE", "duckdb").lower())
     duckdb_path: Path = field(

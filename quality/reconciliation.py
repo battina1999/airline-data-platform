@@ -40,6 +40,30 @@ def _file_rows(filename: str) -> int:
         return max(sum(1 for _ in fh) - 1, 0)  # minus header
 
 
+def _bts_source_rows(con) -> int:
+    """Source row count straight from the BTS monthly CSVs (DuckDB, fast)."""
+    pattern = str(settings.bts_data_dir / "*.csv").replace("'", "''")
+    return con.sql(
+        f"SELECT count(*) FROM read_csv('{pattern}', header=true, "
+        f"union_by_name=true, sample_size=200000, ignore_errors=true)"
+    ).fetchone()[0]
+
+
+def _source_rows(con, spec: dict) -> int:
+    """File-level row count for a source, respecting the active DATA_SOURCE.
+
+    In bts mode: flights come from the monthly files; airports/carriers are
+    *derived* dimensions (source == raw by construction); weather is empty.
+    """
+    if settings.data_source != "bts":
+        return _file_rows(spec["file"])
+    if spec["name"] == "flights":
+        return _bts_source_rows(con)
+    if spec["name"] == "weather":
+        return 0
+    return _count(con, spec["raw"])  # derived dims: raw IS the source
+
+
 def _table_exists(con, fqname: str) -> bool:
     schema, table = fqname.split(".")
     q = ("SELECT COUNT(*) FROM information_schema.tables "
@@ -60,7 +84,7 @@ def run() -> int:
     rows, report, overall_ok = [], [], True
     try:
         for spec in RECON_SPEC:
-            src = _file_rows(spec["file"])
+            src = _source_rows(con, spec)
             raw = _count(con, spec["raw"])
             load_ok = src == raw
 
