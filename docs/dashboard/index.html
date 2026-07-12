@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Always-on airline operations analytics over 3.45M real US DOT flights.">
+  <meta name="theme-color" content="#071525">
+  <title>Airline Operations Analytics</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to dashboard</a>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="./" aria-label="Airline Operations dashboard home">
+        <span class="brand-mark" aria-hidden="true">✈</span>
+        <span>
+          <strong>Airline Ops</strong>
+          <small>Always-on analytics</small>
+        </span>
+      </a>
+
+      <nav class="main-nav" aria-label="Dashboard pages">
+        <button class="nav-button active" type="button" data-view="overview">Overview</button>
+        <button class="nav-button" type="button" data-view="routes">Routes</button>
+        <button class="nav-button" type="button" data-view="causes">Delay causes</button>
+      </nav>
+
+      <div class="header-links">
+        <a href="./lineage/">Lineage</a>
+        <a href="https://github.com/battina1999/airline-data-platform">GitHub</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">US DOT · BTS On-Time Performance</p>
+        <h1>Airline Operations Analytics</h1>
+        <p id="provenance" class="hero-copy">Loading the governed public data extract…</p>
+      </div>
+      <div class="uptime-card" aria-label="Hosting status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <div>
+          <strong>Always available</strong>
+          <span>Static GitHub Pages · no sleeping server</span>
+        </div>
+      </div>
+    </section>
+
+    <div id="loading" class="loading-card" role="status">
+      <span class="loader" aria-hidden="true"></span>
+      Loading dashboard data…
+    </div>
+
+    <div id="error" class="error-card" role="alert" hidden>
+      <strong>The dashboard data could not be loaded.</strong>
+      <span>Refresh the page or check the latest Pages deployment on GitHub.</span>
+    </div>
+
+    <section id="view-overview" class="dashboard-view" data-dashboard-view>
+      <div class="kpi-grid" aria-label="Key performance indicators">
+        <article class="kpi-card">
+          <span>Flights</span>
+          <strong id="kpi-flights">—</strong>
+          <small>Scheduled records</small>
+        </article>
+        <article class="kpi-card">
+          <span>On-Time %</span>
+          <strong id="kpi-ontime">—</strong>
+          <small>Completed flights arriving under 15 min late</small>
+        </article>
+        <article class="kpi-card">
+          <span>Cancellation rate</span>
+          <strong id="kpi-cancel">—</strong>
+          <small>Cancelled ÷ scheduled</small>
+        </article>
+        <article class="kpi-card">
+          <span>Avg arrival delay</span>
+          <strong id="kpi-delay">—</strong>
+          <small>Completed flights</small>
+        </article>
+      </div>
+
+      <div class="panel-grid wide-left">
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-label">Daily operations</p>
+              <h2>Delayed vs cancelled flights</h2>
+            </div>
+            <div class="legend" aria-label="Chart legend">
+              <span><i style="--legend-color:#60a5fa"></i>Delayed</span>
+              <span><i style="--legend-color:#f97316"></i>Cancelled</span>
+            </div>
+          </div>
+          <div id="trend-chart" class="chart" aria-label="Daily delayed and cancelled flights line chart"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-label">Cancellations</p>
+              <h2>Reason mix</h2>
+            </div>
+          </div>
+          <div id="cancellation-donut" class="donut-layout"></div>
+        </article>
+      </div>
+
+      <article class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="section-label">Carrier reliability</p>
+            <h2>On-Time % by carrier</h2>
+          </div>
+          <a class="text-link" href="https://github.com/battina1999/airline-data-platform/blob/main/docs/kpi_definitions.md">KPI definitions ↗</a>
+        </div>
+        <div id="carrier-bars" class="carrier-bars"></div>
+      </article>
+    </section>
+
+    <section id="view-routes" class="dashboard-view" data-dashboard-view hidden>
+      <article class="panel">
+        <div class="panel-heading route-heading">
+          <div>
+            <p class="section-label">Directional origin → destination</p>
+            <h2>Route explorer</h2>
+            <p>Routes with fewer than 20 flights are suppressed to reduce small-sample noise.</p>
+          </div>
+          <span id="route-count" class="count-pill">— routes</span>
+        </div>
+
+        <div class="filters" aria-label="Route filters">
+          <label>
+            Origin
+            <select id="origin-filter"><option value="">All origins</option></select>
+          </label>
+          <label>
+            Destination
+            <select id="destination-filter"><option value="">All destinations</option></select>
+          </label>
+          <label class="range-label">
+            Minimum flights
+            <span><input id="min-flights" type="range" min="20" max="2000" step="20" value="100"><output id="min-flights-value">100</output></span>
+          </label>
+          <button id="reset-routes" class="secondary-button" type="button">Reset filters</button>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="section-label">Reliability and delay</p>
+            <h2>Routes in view</h2>
+          </div>
+          <div class="legend" aria-label="Scatter chart explanation">
+            <span>Bubble size = flights</span>
+            <span>Color = cancellation rate</span>
+          </div>
+        </div>
+        <div id="route-scatter" class="chart route-chart" aria-label="Route performance scatter plot"></div>
+      </article>
+
+      <article class="panel table-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="section-label">Highest arrival delays</p>
+            <h2>Most-delayed routes in the filter</h2>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Route</th>
+                <th>Flights</th>
+                <th>On-Time %</th>
+                <th>Avg arrival delay</th>
+                <th>Cancellation %</th>
+              </tr>
+            </thead>
+            <tbody id="route-table"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section id="view-causes" class="dashboard-view" data-dashboard-view hidden>
+      <div id="cause-cards" class="kpi-grid cause-grid"></div>
+
+      <div class="panel-grid equal">
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-label">Attributed delay minutes</p>
+              <h2>Total by cause</h2>
+            </div>
+          </div>
+          <div id="cause-donut" class="donut-layout"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-label">Daily trend</p>
+              <h2>Delay rate over time</h2>
+            </div>
+          </div>
+          <div id="delay-rate-chart" class="chart" aria-label="Daily delay rate line chart"></div>
+        </article>
+      </div>
+
+      <article class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="section-label">Cause trend</p>
+            <h2>Delay minutes through time</h2>
+          </div>
+          <div id="cause-legend" class="legend"></div>
+        </div>
+        <div id="cause-trend-chart" class="chart" aria-label="Daily delay minutes by cause chart"></div>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <div>
+      <strong>Airline Data Platform</strong>
+      <span>Generated automatically from the same committed marts used by Streamlit.</span>
+    </div>
+    <nav aria-label="Footer links">
+      <a href="./lineage/">Data catalog & lineage</a>
+      <a href="https://github.com/battina1999/airline-data-platform/blob/main/docs/kpi_definitions.md">KPI definitions</a>
+      <a href="https://airline-ops-battina.streamlit.app/">Optional Streamlit version</a>
+    </nav>
+  </footer>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
