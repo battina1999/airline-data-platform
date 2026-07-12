@@ -1,4 +1,4 @@
-name: Publish dbt docs
+name: Publish always-on dashboard and lineage
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-docs:
+  build-site:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,10 +37,26 @@ jobs:
       - name: Generate dbt docs (catalog + lineage)
         run: cd dbt/airline_dwh && dbt docs generate --profiles-dir . --static
 
-      - name: Prepare Pages payload (self-contained static site)
+      - name: Prepare Pages payload (dashboard + lineage)
         run: |
-          mkdir -p pages
-          cp dbt/airline_dwh/target/static_index.html pages/index.html
+          rm -rf pages
+          mkdir -p pages/data pages/lineage
+          cp docs/dashboard/index.html docs/dashboard/styles.css docs/dashboard/app.js pages/
+          cp dbt/airline_dwh/target/static_index.html pages/lineage/index.html
+          python docs/dashboard/scripts/build_data.py --output pages/data/dashboard-data.json
+          touch pages/.nojekyll
+
+      - name: Validate Pages payload
+        run: |
+          test -s pages/index.html
+          test -s pages/styles.css
+          test -s pages/app.js
+          test -s pages/data/dashboard-data.json
+          test -s pages/lineage/index.html
+          grep -q "Always available" pages/index.html
+          grep -q "dbt Docs" pages/lineage/index.html
+          node --check pages/app.js
+          python -m json.tool pages/data/dashboard-data.json >/dev/null
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
@@ -48,7 +64,7 @@ jobs:
           path: pages
 
   deploy:
-    needs: build-docs
+    needs: build-site
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -56,3 +72,23 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify the published dashboard and lineage
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          root_url="${PAGE_URL%/}/"
+          lineage_url="${PAGE_URL%/}/lineage/"
+          for attempt in {1..20}; do
+            root_page="$(curl --fail --silent --show-error --location "$root_url" || true)"
+            lineage_page="$(curl --fail --silent --show-error --location "$lineage_url" || true)"
+            if grep -q "Always available" <<<"$root_page" && grep -q "dbt Docs" <<<"$lineage_page"; then
+              echo "Published site passed smoke checks: $root_url"
+              exit 0
+            fi
+            echo "Waiting for Pages propagation (attempt $attempt/20)..."
+            sleep 6
+          done
+          echo "Published Pages content did not pass smoke checks."
+          exit 1
