@@ -8,13 +8,13 @@
 
 <p align="center">
   <a href="https://github.com/battina1999/airline-data-platform/actions/workflows/ci.yml"><img src="https://github.com/battina1999/airline-data-platform/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://battina1999.github.io/airline-data-platform/"><img src="https://img.shields.io/badge/dbt%20docs-lineage%20site-FF694B?logo=dbt&logoColor=white" alt="dbt docs"></a>
+  <a href="https://battina1999.github.io/airline-data-platform/lineage/"><img src="https://img.shields.io/badge/dbt%20docs-lineage%20site-FF694B?logo=dbt&logoColor=white" alt="dbt docs"></a>
   <img src="https://img.shields.io/badge/data-3.45M%20real%20BTS%20flights-1f3b5c" alt="real data">
 </p>
 
 <p align="center">
-  🚀 <b><a href="https://airline-ops-battina.streamlit.app">LIVE DASHBOARD</a></b> ·
-  📊 <b><a href="https://battina1999.github.io/airline-data-platform/">Data catalog & lineage</a></b> ·
+  🚀 <b><a href="https://battina1999.github.io/airline-data-platform/">LIVE DASHBOARD</a></b> ·
+  📊 <b><a href="https://battina1999.github.io/airline-data-platform/lineage/">Data catalog & lineage</a></b> ·
   📐 <b><a href="docs/kpi_definitions.md">KPI definitions</a></b> ·
   🔬 <b><a href="docs/data_profile.md">Real-data profile</a></b>
 </p>
