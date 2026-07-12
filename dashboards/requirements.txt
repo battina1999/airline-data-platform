@@ -1,0 +1,6 @@
+# Lean dependency set for the optional Streamlit version.
+# The primary GitHub Pages dashboard does not need Python or a running server.
+streamlit>=1.39,<2
+pandas>=2,<3
+pyarrow>=14,<24
+plotly>=5.18,<7
